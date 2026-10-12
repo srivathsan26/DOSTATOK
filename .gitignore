@@ -1,0 +1,3 @@
+backend/out/
+frontend/dist/
+database/*.db
