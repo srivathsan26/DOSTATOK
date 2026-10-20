@@ -1,42 +1,83 @@
 package com.dostatok.main;
 
-import com.sun.net.httpserver.HttpExchange;
+import com.dostatok.controller.ApiController;
+import com.dostatok.dao.AccountRepository;
+import com.dostatok.dao.AccountRepositoryImpl;
+import com.dostatok.dao.FinanceRepository;
+import com.dostatok.dao.FinanceRepositoryImpl;
+import com.dostatok.dao.TransactionRepository;
+import com.dostatok.dao.TransactionRepositoryImpl;
+import com.dostatok.database.DatabaseConfig;
+import com.dostatok.service.AccountService;
+import com.dostatok.service.FinanceService;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
+import java.util.concurrent.Executors;
 
+/**
+ * Main application bootstrap for DOSTATOK — Personal Financial Management System.
+ * Demonstrates:
+ * - Clean multi-tiered architectural composition
+ * - Inversion of Control / Dependency Injection
+ * - Self-initializing SQLite persistent database
+ * - Multi-threaded JDK built-in HTTP Server
+ */
 public final class App {
-    // This private constructor prevents creating an App object because the server uses only static setup.
-    private App() {}
+    private static final int PORT = Integer.getInteger("DOSTATOK_PORT", 8080);
 
-    // This method starts the HTTP server and reports any startup or request errors.
-    public static void main(String[] args) throws IOException {
-        // This server listens for local HTTP requests on port 8080.
-        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
-        // This handler responds only at the health-check URL.
-        server.createContext("/api/health", exchange -> handleHealth(exchange));
-        // This line starts accepting requests in the background.
-        server.start();
-        // This message tells the beginner where the server is running.
-        System.out.println("DOSTATOK server running at http://localhost:8080");
+    private App() {
+        // Prevent instantiation
     }
 
-    // This method sends the health response with the requested headers and JSON body.
-    private static void handleHealth(HttpExchange exchange) throws IOException {
-        // This header allows the local React development site to call this server.
-        exchange.getResponseHeaders().set("Access-Control-Allow-Origin", "http://localhost:5173");
-        // This header tells clients that the response contains UTF-8 JSON.
-        exchange.getResponseHeaders().set("Content-Type", "application/json; charset=utf-8");
-        // This string is the exact health information returned to the caller.
-        byte[] response = "{\"status\":\"ok\",\"app\":\"DOSTATOK\"}".getBytes(StandardCharsets.UTF_8);
-        // This sends an HTTP success status and the body length before writing the body.
-        exchange.sendResponseHeaders(200, response.length);
-        // This resource block always closes the response stream after writing the body.
-        try (OutputStream output = exchange.getResponseBody()) {
-            // This writes the JSON bytes to the client.
-            output.write(response);
+    public static void main(String[] args) {
+        System.out.println("==========================================================");
+        System.out.println("   DOSTATOK — Personal Financial Management System        ");
+        System.out.println("==========================================================");
+
+        try {
+            // 1. Initialize SQLite Database & Tables
+            DatabaseConfig.initializeDatabase();
+            System.out.println("Database storage: " + DatabaseConfig.getDatabasePath().toAbsolutePath());
+
+            // 2. Instantiate Data Access (Repository) Layer
+            AccountRepository accountRepository = new AccountRepositoryImpl();
+            TransactionRepository transactionRepository = new TransactionRepositoryImpl();
+            FinanceRepository financeRepository = new FinanceRepositoryImpl();
+
+            // 3. Instantiate Business Logic (Service) Layer
+            AccountService accountService = new AccountService(accountRepository, transactionRepository);
+            FinanceService financeService = new FinanceService(
+                financeRepository, accountRepository, transactionRepository, accountService
+            );
+
+            // 4. Instantiate API Controller
+            ApiController apiController = new ApiController(accountService, financeService);
+
+            // 5. Configure JDK HttpServer
+            HttpServer server = HttpServer.create(new InetSocketAddress(PORT), 0);
+            server.createContext("/api/", apiController);
+            server.createContext("/api", apiController);
+
+            // Set up multi-threaded thread pool for high throughput
+            server.setExecutor(Executors.newFixedThreadPool(12));
+            server.start();
+
+            System.out.println("DOSTATOK HTTP Server listening at: http://localhost:" + PORT);
+            System.out.println("Health check: http://localhost:" + PORT + "/api/health");
+            System.out.println("Dashboard summary: http://localhost:" + PORT + "/api/dashboard/summary");
+            System.out.println("Accounts endpoint: http://localhost:" + PORT + "/api/accounts");
+            System.out.println("Ready to serve requests from React frontend at http://localhost:5173");
+            System.out.println("==========================================================");
+
+        } catch (IOException e) {
+            System.err.println("Fatal: Failed to start HTTP server on port " + PORT + ": " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
+        } catch (Exception e) {
+            System.err.println("Fatal: Application bootstrap error: " + e.getMessage());
+            e.printStackTrace();
+            System.exit(1);
         }
     }
 }

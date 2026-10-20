@@ -1,3 +1,7 @@
 backend/out/
 frontend/dist/
 database/*.db
+backend/data/
+*.tmp
+frontend/.env
+frontend/.env.local
