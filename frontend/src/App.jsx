@@ -1683,13 +1683,20 @@ function AuthScreen({ onAuthenticated }) {
   return (
     <main className="auth-page">
       <form className="auth-card" onSubmit={submit}>
-        <div className="auth-brand-lockup" aria-label="DOSTATOK — Build your horizon">
+        <a
+          className="auth-brand-lockup auth-brand-link"
+          href="https://srivathsan-v-portfolio.ai.studio/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="DOSTATOK — open Srivathsan's portfolio in a new tab"
+          title="Visit my portfolio"
+        >
           <img src={coinLogo} alt="" aria-hidden="true" />
           <span className="auth-brand-text">
             <strong>DOSTATOK</strong>
             <span>BUILD YOUR HORIZON</span>
           </span>
-        </div>
+        </a>
         <h1>{mode === 'login' ? 'Welcome back' : 'Create your account'}</h1>
         <p>Your financial information stays in your local DOSTATOK database.</p>
         {mode === 'register' && <label>Name<input className="form-input" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} /></label>}

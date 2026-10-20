@@ -31,13 +31,20 @@ export default function Header({ serverOnline, profile, onLogout, onProfileClick
 
   return (
     <header className="app-header">
-      <div className="brand-lockup" aria-label="DOSTATOK">
+      <a
+        className="brand-lockup brand-link"
+        href="https://srivathsan-v-portfolio.ai.studio/"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="DOSTATOK — open Srivathsan's portfolio in a new tab"
+        title="Visit my portfolio"
+      >
         <img className="brand-logo-icon" src={coinLogo} alt="" aria-hidden="true" />
         <span className="brand-text-block">
           <span className="brand-title">DOSTATOK</span>
           <span className="brand-subtitle">BUILD YOUR HORIZON</span>
         </span>
-      </div>
+      </a>
 
       <div className="header-actions">
         <div className={`health-badge ${serverOnline ? 'is-online' : 'is-offline'}`} role="status">
