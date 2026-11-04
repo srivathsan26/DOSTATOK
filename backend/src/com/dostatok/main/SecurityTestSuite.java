@@ -38,7 +38,7 @@ public final class SecurityTestSuite {
             try (ResultSet r = s.executeQuery("SELECT count(*) FROM users WHERE email='aditya.sharma@dostatok.in'")) {
                 r.next(); check(r.getInt(1) == 0, "migration removes retired demo profile");
             }
-            try (ResultSet r = s.executeQuery("PRAGMA user_version")) { r.next(); check(r.getInt(1) == 1, "migration records schema version 1"); }
+            try (ResultSet r = s.executeQuery("PRAGMA user_version")) { r.next(); check(r.getInt(1) == 2, "migration records schema version 1"); }
         }
 
         var accountRepo = new AccountRepositoryImpl();
